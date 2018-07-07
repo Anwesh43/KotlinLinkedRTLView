@@ -21,6 +21,12 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
 
     private val renderer : Renderer = Renderer(this)
 
+    var onCompletionListener : OnCompletionListener? = null
+
+    fun addOnCompletionListener(onComplete : (Int) -> Unit, onReset : (Int) -> Unit) {
+        onCompletionListener = OnCompletionListener(onComplete, onReset)
+    }
+
     override fun onDraw(canvas : Canvas) {
         renderer.render(canvas, paint)
     }
@@ -128,8 +134,10 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
             }
         }
 
-        fun update(stopcb : (Float) -> Unit) {
-            state.update(stopcb)
+        fun update(stopcb : (Int, Float) -> Unit) {
+            state.update {
+                stopcb(i, it)
+            }
         }
 
         fun startUpdating(startcb : () -> Unit) {
@@ -159,12 +167,12 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
             curr.draw(canvas, paint)
         }
 
-        fun update(stopcb : (Float) -> Unit) {
-            curr.update {
+        fun update(stopcb : (Int, Float) -> Unit) {
+            curr.update {j, scale ->
                 curr = curr.getNext(dir) {
                     dir *= -1
                 }
-                stopcb(it)
+                stopcb(j, scale)
             }
         }
 
@@ -183,8 +191,12 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
             canvas.drawColor(Color.parseColor("#212121"))
             linkedRTL.draw(canvas, paint)
             animator.animate {
-                linkedRTL.update {
+                linkedRTL.update {j, scale ->
                     animator.stop()
+                    when (scale) {
+                        0f -> view.onCompletionListener?.onReset?.invoke(j)
+                        1f -> view.onCompletionListener?.onComplete?.invoke(j)
+                    }
                 }
             }
         }
@@ -204,4 +216,6 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
             return view
         }
     }
+
+    data class OnCompletionListener(var onComplete : (Int) -> Unit, var onReset : (Int) -> Unit)
 }
