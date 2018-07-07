@@ -11,6 +11,7 @@ import android.graphics.Canvas
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PointF
+import android.util.Log
 
 val RTL_NODES : Int = 5
 
@@ -36,11 +37,11 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
     data class State(var scale : Float = 0f, var prevScale : Float = 0f, var dir : Float = 0f) {
 
         fun update(stopcb : (Float) -> Unit) {
-            scale += 0.1f * dir
+            scale += 0.05f * dir
             if (Math.abs(scale - prevScale) > 1) {
-                prevScale = scale + dir
+                scale = prevScale + dir
                 dir = 0f
-                scale = prevScale
+                prevScale = scale
                 stopcb(prevScale)
             }
         }
@@ -99,23 +100,28 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
         }
 
         fun draw(canvas : Canvas, paint : Paint) {
+            prev?.draw(canvas, paint)
             val w : Float = canvas.width.toFloat()
             val h : Float = canvas.height.toFloat()
             paint.strokeWidth = Math.min(w, h) / 60
             paint.strokeCap = Paint.Cap.ROUND
             paint.color = Color.parseColor("#03A9F4")
             val gap : Float = w / RTL_NODES
-            val scale : Float = state.scale/3
-            val getScale : (Int) -> Float = {i -> Math.min(0.33f, Math.max((i + 1) * scale/3 - 0.33f * i, 0f)) * 3}
+            val scale : Float = state.scale
+            val getScale : (Int) -> Float = {t -> Math.min(0.33f, Math.max((scale) - (0.33f * t), 0f)) * 3}
             val scales : Array<Float> = arrayOf(getScale(0), getScale(1), getScale(2))
             val pivots : Array<PointF> = arrayOf(PointF(0f, 0f), PointF(gap/2, gap/2), PointF(gap, 0f))
-            val rots : Array<Float> = arrayOf(-45f * scales[0], -45f + 90f + scales[1], 45f - 45f + scales[2])
-            val size : Float = gap / 2 * Math.sqrt(2.0).toFloat()
+            val rots : Array<Float> = arrayOf(-45f * scales[0], -45f + 90f * scales[1], 45f - 45f * scales[2])
+            val size : Float = (gap / 2) * Math.sqrt(2.0).toFloat()
             val endYs : Array<Float> = arrayOf(size, -size, size)
-            val i : Int = (scale * 3).toInt()
-            if (i < scales.size) {
+            var i : Int = (scale * 3).toInt()
+            Log.d("scales at ${i} in ${this.i}", "${scales.joinToString(",")}")
+            if ( i == 3) {
+                i -= 1
+            }
+            if (i < 3) {
                 canvas.save()
-                canvas.translate(i * gap + pivots[i].x, h / 2 + pivots[i].y)
+                canvas.translate(this.i * gap + pivots[i].x, h / 2 + pivots[i].y)
                 canvas.rotate(rots[i])
                 canvas.drawLine(0f, 0f, 0f, endYs[i], paint)
                 canvas.restore()
