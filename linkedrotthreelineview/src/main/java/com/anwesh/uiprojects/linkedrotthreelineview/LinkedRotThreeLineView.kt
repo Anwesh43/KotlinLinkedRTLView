@@ -3,6 +3,7 @@ package com.anwesh.uiprojects.linkedrotthreelineview
 /**
  * Created by anweshmishra on 07/07/18.
  */
+import android.app.Activity
 import android.view.View
 import android.view.MotionEvent
 import android.graphics.Paint
@@ -186,6 +187,15 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
             linkedRTL.startUpdating {
                 animator.start()
             }
+        }
+    }
+
+    companion object {
+
+        fun create(activity : Activity)  : LinkedRotThreeLineView  {
+            val view : LinkedRotThreeLineView = LinkedRotThreeLineView(activity)
+            activity.setContentView(view)
+            return view
         }
     }
 }
