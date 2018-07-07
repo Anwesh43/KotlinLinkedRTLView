@@ -8,6 +8,10 @@ import android.view.MotionEvent
 import android.graphics.Paint
 import android.graphics.Canvas
 import android.content.Context
+import android.graphics.Color
+import android.graphics.PointF
+
+val RTL_NODES : Int = 5
 
 class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
 
@@ -69,8 +73,70 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
 
         fun stop() {
             if (animated) {
-                animated = false 
+                animated = false
             }
+        }
+    }
+
+    data class RTLNode(var i : Int, val state : State = State()) {
+
+        var next : RTLNode? = null
+
+        var prev : RTLNode? = null
+
+        init {
+            addNeighbor()
+        }
+
+        fun addNeighbor() {
+            if (i < RTL_NODES - 1) {
+                next = RTLNode(i + 1)
+                next?.prev = this
+            }
+        }
+
+        fun draw(canvas : Canvas, paint : Paint) {
+            val w : Float = canvas.width.toFloat()
+            val h : Float = canvas.height.toFloat()
+            paint.strokeWidth = Math.min(w, h) / 60
+            paint.strokeCap = Paint.Cap.ROUND
+            paint.color = Color.parseColor("#03A9F4")
+            val gap : Float = w / RTL_NODES
+            val scale : Float = state.scale/3
+            val getScale : (Int) -> Float = {i -> Math.min(0.33f, Math.max((i + 1) * scale/3 - 0.33f * i, 0f)) * 3}
+            val scales : Array<Float> = arrayOf(getScale(0), getScale(1), getScale(2))
+            val pivots : Array<PointF> = arrayOf(PointF(0f, 0f), PointF(gap/2, gap/2), PointF(gap, 0f))
+            val rots : Array<Float> = arrayOf(-45f * scales[0], -45f + 90f + scales[1], 45f - 45f + scales[2])
+            val size : Float = gap / 2 * Math.sqrt(2.0).toFloat()
+            val endYs : Array<Float> = arrayOf(size, -size, size)
+            val i : Int = (scale * 3).toInt()
+            if (i < scales.size) {
+                canvas.save()
+                canvas.translate(i * gap + pivots[i].x, h / 2 + pivots[i].y)
+                canvas.rotate(rots[i])
+                canvas.drawLine(0f, 0f, 0f, endYs[i], paint)
+                canvas.restore()
+            }
+        }
+
+        fun update(stopcb : (Float) -> Unit) {
+            state.update(stopcb)
+        }
+
+        fun startUpdating(startcb : () -> Unit) {
+            state.startUpdating(startcb)
+        }
+
+        fun getNext(dir : Int, cb : () -> Unit) : RTLNode {
+            var curr : RTLNode? = prev
+            if (dir === 1) {
+                curr = next
+            }
+            if (curr != null) {
+                return curr
+            }
+            cb()
+            return this
         }
     }
 }
