@@ -163,4 +163,27 @@ class LinkedRotThreeLineView (ctx : Context) : View(ctx) {
             curr.startUpdating(startcb)
         }
     }
+
+    data class Renderer(var view : LinkedRotThreeLineView) {
+
+        private val animator : Animator = Animator(view)
+
+        private val linkedRTL : LinkedRTL = LinkedRTL(0)
+
+        fun render(canvas : Canvas, paint : Paint) {
+            canvas.drawColor(Color.parseColor("#212121"))
+            linkedRTL.draw(canvas, paint)
+            animator.animate {
+                linkedRTL.update {
+                    animator.stop()
+                }
+            }
+        }
+
+        fun handleTap() {
+            linkedRTL.startUpdating {
+                animator.start()
+            }
+        }
+    }
 }
